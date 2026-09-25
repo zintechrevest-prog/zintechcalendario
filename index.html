@@ -25,12 +25,12 @@
 
     <header>
         <h1>ZINTECH - Gestão Industrial</h1>
-        <div>Painel Geral — <span class="status-online">● Online</span></div>
+        <div>Painel Geral — <span class="status-online">● Online (Nuvem)</span></div>
     </header>
 
     <nav>
         <a href="#">Painel Geral</a>
-        <a href="#">Cronograma de Produção</a>
+        <a href="#">Cronograma de Production</a>
         <a href="#">Gerenciador de Tarefas</a>
         <a href="#">Configurações</a>
     </nav>
@@ -60,9 +60,7 @@
                     <th>Ação</th>
                 </tr>
             </thead>
-            <tbody id="tabela-producao-andamento">
-                <!-- Linhas inseridas pelo Firebase -->
-            </tbody>
+            <tbody id="tabela-producao-andamento"></tbody>
         </table>
     </section>
 
@@ -73,7 +71,7 @@
     </section>
 
     <section>
-        <h2>✅ Cronograma Completo de Production</h2>
+        <h2>✅ Cronograma Completo de Produção</h2>
         <p>Ordens ativas em acompanhamento</p>
         <div>
             <button>Todos os Status</button>
@@ -93,12 +91,9 @@
                     <th>Ações</th>
                 </tr>
             </thead>
-            <tbody id="tabela-cronograma-completo">
-                <!-- Linhas inseridas pelo Firebase -->
-            </tbody>
+            <tbody id="tabela-cronograma-completo"></tbody>
         </table>
     </section>
-
     <section>
         <h2>## Todas as Tarefas Cadastradas</h2>
         <p>Gerenciamento completo das tarefas e rotinas <button size="small">+ Nova Tarefa</button></p>
@@ -113,15 +108,13 @@
                     <th>Ações</th>
                 </tr>
             </thead>
-            <tbody id="tabela-todas-tarefas">
-                <!-- Linhas inseridas pelo Firebase -->
-            </tbody>
+            <tbody id="tabela-todas-tarefas"></tbody>
         </table>
     </section>
 
     <section>
         <h2>## Configurações Gerais</h2>
-        <p>Parâmetros operacionais do sistema Zintech.</p>
+        <p>Parâmetros operacionais do sistema Zintech integrados ao Firebase.</p>
     </section>
 
     <section class="modal">
@@ -157,13 +150,13 @@
     </section>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { initializeApp } from "https://gstatic.com";
+        import { getDatabase, ref, push, onValue } from "https://gstatic.com";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCXit1kRnn3TfEjCEEbyUsgtBA21ntJxXs",
-            authDomain: "calendario-zintech.firebaseapp.com",
-            databaseURL: "https://calendario-zintech-default-rtdb.firebaseio.com",
+            authDomain: "://firebaseapp.com",
+            databaseURL: "https://firebaseio.com",
             projectId: "calendario-zintech",
             storageBucket: "calendario-zintech.firebasestorage.app",
             messagingSenderId: "374446044072",
@@ -175,29 +168,28 @@
 
         onValue(ref(db, "ordens_producao"), (snapshot) => {
             const dados = snapshot.val();
-            const tabelaAndamento = document.getElementById("tabela-producao-andamento");
-            const tabelaCompleta = document.getElementById("tabela-cronograma-completo");
-            tabelaAndamento.innerHTML = "";
-            tabelaCompleta.innerHTML = "";
+            const tAndamento = document.getElementById("tabela-producao-andamento");
+            const tCompleta = document.getElementById("tabela-cronograma-completo");
+            tAndamento.innerHTML = ""; tCompleta.innerHTML = "";
             if (dados) {
                 Object.keys(dados).forEach((id) => {
                     const o = dados[id];
                     if(o.status === "Em andamento" || o.status === "Prioridade / Atrasado") {
-                        tabelaAndamento.innerHTML += `<tr><td>${o.cliente || ""} / ${o.tipo_peca || ""}</td><td>${o.quantidade_kg || 0}</td><td>${o.data_entrega || ""}</td><td><strong>${o.status || ""}</strong></td><td><button size="small">Gerenciar</button></td></tr>`;
+                        tAndamento.innerHTML += `<tr><td>${o.cliente || ""} / ${o.tipo_peca || ""}</td><td>${o.quantidade_kg || 0}</td><td>${o.data_entrega || ""}</td><td><strong>${o.status || ""}</strong></td><td><button size="small">Gerenciar</button></td></tr>`;
                     }
-                    tabelaCompleta.innerHTML += `<tr><td>${o.cliente || ""}</td><td>${o.tipo_peca || ""}</td><td>${o.quantidade_kg || 0}</td><td>${o.data_chegada || ""}</td><td>${o.data_entrega || ""}</td><td>${o.status || ""}</td><td><button>Editar</button></td></tr>`;
+                    tCompleta.innerHTML += `<tr><td>${o.cliente || ""}</td><td>${o.tipo_peca || ""}</td><td>${o.quantidade_kg || 0}</td><td>${o.data_chegada || ""}</td><td>${o.data_entrega || ""}</td><td>${o.status || ""}</td><td><button>Editar</button></td></tr>`;
                 });
             }
         });
 
         onValue(ref(db, "tarefas"), (snapshot) => {
             const dados = snapshot.val();
-            const tabelaTarefas = document.getElementById("tabela-todas-tarefas");
-            tabelaTarefas.innerHTML = "";
+            const tTarefas = document.getElementById("tabela-todas-tarefas");
+            tTarefas.innerHTML = "";
             if (dados) {
                 Object.keys(dados).forEach((id) => {
                     const t = dados[id];
-                    tabelaTarefas.innerHTML += `<tr><td>${t.data || ""}</td><td>${t.hora || ""}</td><td>${t.nome_tarefa || ""}</td><td>${t.frequencia || ""}</td><td>${t.status || "Pendente"}</td><td><button>Concluir</button></td></tr>`;
+                    tTarefas.innerHTML += `<tr><td>${t.data || ""}</td><td>${t.hora || ""}</td><td>${t.nome_tarefa || ""}</td><td>${t.frequencia || ""}</td><td>${t.status || "Pendente"}</td><td><button>Concluir</button></td></tr>`;
                 });
             }
         });
