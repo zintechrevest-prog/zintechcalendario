@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zintech - Gestão Industrial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        zintechDark: '#0f172a',
+                        zintechCard: '#1e293b',
+                        zintechBlue: '#2563eb',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0b1120; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
+
+    <!-- CABEÇALHO PRINCIPAL DA DASHBOARD -->
+    <header class="bg-zintechCard border-b border-slate-800 px-4 sm:px-8 py-4 sm:py-5 flex flex-col justify-between items-center shadow-lg gap-3">
+        <div class="text-center w-full">
+            <h1 class="text-3xl sm:text-5xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500">
+                ZINTECH
+            </h1>
+            <p id="subHeaderTitle" class="text-[11px] sm:text-xs font-bold text-slate-400 tracking-wider uppercase mt-0.5">
+                Gestão Industrial — Painel Geral
+            </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 w-full">
+            <div class="bg-slate-900/90 px-4 py-2 sm:px-6 sm:py-3 rounded-2xl border border-slate-700/80 shadow-inner flex items-center justify-center gap-3 w-full sm:w-auto">
+                <div id="currentDateDisplay" class="text-xs sm:text-lg font-black text-blue-400 tracking-wide uppercase"></div>
+                <div class="text-slate-600 text-lg font-light">|</div>
+                <div id="currentTimeDisplay" class="text-xl sm:text-3xl font-extrabold text-white tracking-widest font-mono"></div>
+            </div>
+            <div class="flex items-center justify-center space-x-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" title="Sistema Online"></div>
+                <span class="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">Online</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVEGAÇÃO / ABAS -->
+    <nav class="bg-slate-900 border-b border-slate-800 px-4 sm:px-8 overflow-x-auto">
+        <div class="flex space-x-2 py-3 min-w-max">
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all bg-blue-600 text-white shadow-md">Painel Geral</button>
+            <button onclick="switchTab('producao')" id="btn-producao" class="tab-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all bg-slate-800 text-slate-300 hover:bg-slate-700">Cronograma de Produção</button>
+            <button onclick="switchTab('tarefas')" id="btn-tarefas" class="tab-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all bg-slate-800 text-slate-300 hover:bg-slate-700">Gerenciador de Tarefas</button>
+            <button onclick="switchTab('configuracoes')" id="btn-configuracoes" class="tab-btn px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all bg-slate-800 text-slate-300 hover:bg-slate-700">Configurações</button>
+        </div>
+    </nav>
+
+    <!-- CONTEÚDO PRINCIPAL (OTIMIZADO PARA RETRATO) -->
+    <main class="flex-1 p-3 sm:p-6 max-w-[1700px] mx-auto w-full space-y-4 sm:space-y-6">
+
+        <!-- BARRA DE INTELIGÊNCIA ARTIFICIAL -->
+        <section class="bg-gradient-to-r from-slate-900 via-zintechCard to-slate-900 p-3.5 sm:p-4 rounded-2xl border border-blue-500/30 shadow-xl space-y-2">
+            <form onsubmit="handleSmartTaskSubmit(event)" class="flex flex-col gap-2.5">
+                <div class="flex items-center gap-2 text-blue-400 font-bold text-xs sm:text-sm whitespace-nowrap">
+                    <span class="text-base">✨</span> IA Assistente de Tarefas:
+                </div>
+                <input type="text" id="smartTaskInput" 
+                       placeholder='Ex: "toda terça a cada 15 dias enviar analise de banho"' 
+                       class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-blue-500 placeholder-slate-500">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition shadow-lg">
+                        + Criar Tarefa via IA
+                    </button>
+                    <button type="button" onclick="openProductionModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition shadow-lg">
+                        + Nova Ordem de Produção
+                    </button>
+                </div>
+            </form>
+            <p class="text-[10px] sm:text-[11px] text-slate-400 text-center sm:text-left">
+                ⏰ Horário Padrão das Tarefas: <span class="font-semibold text-slate-300">08:00</span> na próxima data correspondente.
+            </p>
+        </section>
+
+        <!-- ABA 1: PAINEL GERAL (DASHBOARD - RETRATO DEDICADO) -->
+        <section id="tab-dashboard" class="tab-content space-y-4 sm:space-y-6">
+            <!-- EM MODO RETRATO: EMPILHAMENTO VERTICAL -->
+            <div class="flex flex-col gap-4 sm:gap-6">
+
+                <!-- TAREFAS DO DIA & PRIORIDADES -->
+                <div class="bg-zintechCard border-2 border-blue-500/40 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col">
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xl p-2 bg-blue-600/20 rounded-xl border border-blue-500/30">📋</span>
+                            <div>
+                                <h2 class="text-lg sm:text-2xl font-black text-white">Tarefas do Dia</h2>
+                                <p class="text-[10px] sm:text-xs text-slate-400">Pendências e prioridades do dia</p>
+                            </div>
+                        </div>
+                        <span id="pendingCountBadge" class="bg-blue-500/20 text-blue-400 text-xs font-black px-3 py-1 rounded-full border border-blue-500/40">0 Pendentes</span>
+                    </div>
+
+                    <div id="pendingTasksList" class="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                        <!-- Preenchido via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- CRONOGRAMA DE PRODUÇÃO DO DIA -->
+                <div class="bg-zintechCard border-2 border-emerald-500/40 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col">
+                    <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-xl p-2 bg-emerald-600/20 rounded-xl border border-emerald-500/30">🏭</span>
+                            <div>
+                                <h2 class="text-lg sm:text-2xl font-black text-white">Produção em Andamento</h2>
+                                <p class="text-[10px] sm:text-xs text-slate-400">Pedidos ativos e prioridades</p>
+                            </div>
+                        </div>
+                        <button onclick="openProductionModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition whitespace-nowrap">
+                            + Nova Ordem
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[500px]">
+                            <thead>
+                                <tr class="bg-slate-900/80 border-b border-slate-800 text-slate-400 text-[11px] uppercase tracking-wider">
+                                    <th class="p-2.5">Cliente / Peça</th>
+                                    <th class="p-2.5">Qtd (kg)</th>
+                                    <th class="p-2.5">Entrega</th>
+                                    <th class="p-2.5">Status</th>
+                                    <th class="p-2.5 text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardProductionTable" class="divide-y divide-slate-800/80 text-xs sm:text-sm">
+                                <!-- Preenchido via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- TAREFAS CONCLUÍDAS HOJE -->
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-inner">
+                <div class="flex justify-between items-center mb-3 border-b border-slate-800 pb-2.5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">✅</span>
+                        <h2 class="text-sm sm:text-lg font-bold text-emerald-400">Tarefas Recorrentes Concluídas Hoje</h2>
+                    </div>
+                    <button onclick="manualResetOfDay()" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white px-2.5 py-1 rounded-lg border border-slate-700 transition">
+                        🔄 Resetar
+                    </button>
+                </div>
+
+                <div id="completedTasksList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 2: CRONOGRAMA COMPLETO DE PRODUÇÃO -->
+        <section id="tab-producao" class="tab-content hidden space-y-4 sm:space-y-6">
+            <!-- CARDS DE INDICADORES (2x2 em modo retrato) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-zintechCard p-3.5 sm:p-5 rounded-2xl border border-slate-800 shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase">Total</p>
+                        <p id="kpiTotalOrders" class="text-xl sm:text-3xl font-black text-white mt-0.5">0</p>
+                    </div>
+                    <span class="text-2xl sm:text-3xl">📦</span>
+                </div>
+                <div class="bg-zintechCard p-3.5 sm:p-5 rounded-2xl border border-slate-800 shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs text-amber-400 font-bold uppercase">Em Andamento</p>
+                        <p id="kpiActiveOrders" class="text-xl sm:text-3xl font-black text-amber-400 mt-0.5">0</p>
+                    </div>
+                    <span class="text-2xl sm:text-3xl">⚙️</span>
+                </div>
+                <div class="bg-zintechCard p-3.5 sm:p-5 rounded-2xl border border-slate-800 shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs text-rose-400 font-bold uppercase">Atrasados</p>
+                        <p id="kpiOverdueOrders" class="text-xl sm:text-3xl font-black text-rose-400 mt-0.5">0</p>
+                    </div>
+                    <span class="text-2xl sm:text-3xl">🔥</span>
+                </div>
+                <div class="bg-zintechCard p-3.5 sm:p-5 rounded-2xl border border-slate-800 shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs text-emerald-400 font-bold uppercase">Concluídos</p>
+                        <p id="kpiReadyOrders" class="text-xl sm:text-3xl font-black text-emerald-400 mt-0.5">0</p>
+                    </div>
+                    <span class="text-2xl sm:text-3xl">✅</span>
+                </div>
+            </div>
+
+            <div class="bg-zintechCard rounded-2xl border border-slate-800 p-4 sm:p-6 shadow-xl space-y-4">
+                <div class="flex flex-col gap-3 border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white">Cronograma Completo de Produção</h2>
+                        <p class="text-xs text-slate-400">Ordens ativas em acompanhamento</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2.5 w-full">
+                        <input type="text" id="searchProdInput" oninput="renderFullProduction()" placeholder="Pesquisar cliente ou peça..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                        <div class="flex gap-2">
+                            <select id="filterProdStatus" onchange="renderFullProduction()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                                <option value="Todos">Todos os Status</option>
+                                <option value="Em andamento">Em Andamento</option>
+                                <option value="Atrasado">Prioridade / Atrasado</option>
+                            </select>
+                            <button onclick="openProductionModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition whitespace-nowrap">
+                                + Nova Ordem
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[650px]">
+                        <thead>
+                            <tr class="bg-slate-900 border-b border-slate-800 text-slate-400 text-xs uppercase">
+                                <th class="p-3">Cliente</th>
+                                <th class="p-3">Tipo de Peça</th>
+                                <th class="p-3">Qtd (kg)</th>
+                                <th class="p-3">Chegada</th>
+                                <th class="p-3">Entrega</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fullProductionTable" class="divide-y divide-slate-800 text-xs sm:text-sm">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 3: GERENCIADOR DE TAREFAS -->
+        <section id="tab-tarefas" class="tab-content hidden space-y-4 sm:space-y-6">
+            <div class="bg-zintechCard rounded-2xl border border-slate-800 p-4 sm:p-6 shadow-xl space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white">Todas as Tarefas Cadastradas</h2>
+                        <p class="text-xs text-slate-400">Gerenciamento completo das tarefas e rotinas</p>
+                    </div>
+                    <button onclick="openNewTaskModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow transition">
+                        + Nova Tarefa
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                            <tr class="bg-slate-900 border-b border-slate-800 text-slate-400 text-xs uppercase">
+                                <th class="p-3">Data</th>
+                                <th class="p-3">Hora</th>
+                                <th class="p-3">Nome da Tarefa</th>
+                                <th class="p-3">Frequência</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allTasksTableBody" class="divide-y divide-slate-800 text-xs sm:text-sm">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 4: CONFIGURAÇÕES -->
+        <section id="tab-configuracoes" class="tab-content hidden space-y-6">
+            <div class="bg-zintechCard p-6 rounded-2xl border border-slate-800 space-y-4">
+                <h2 class="text-xl font-bold text-white">Configurações Gerais</h2>
+                <p class="text-slate-400 text-sm">Parâmetros operacionais do sistema Zintech.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL DE CRIAR / EDITAR ORDEM DE PRODUÇÃO -->
+    <div id="productionModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-zintechCard border border-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 id="modalProductionTitle" class="text-lg sm:text-xl font-bold text-white">Nova Ordem de Produção</h3>
+                <button onclick="closeProductionModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            
+            <input type="hidden" id="editProdId" value="">
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-slate-400 font-bold block mb-1">Cliente</label>
+                    <input type="text" id="prodClient" placeholder="Nome do Cliente" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-slate-400 font-bold block mb-1">Quantidade (kg)</label>
+                        <input type="number" id="prodWeight" placeholder="Ex: 150" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 font-bold block mb-1">Tipo de Peça</label>
+                        <input type="text" id="prodType" placeholder="Ex: Eixo, Flange..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-slate-400 font-bold block mb-1">Data de Chegada</label>
+                        <input type="date" id="prodArrivalDate" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 font-bold block mb-1">Data de Entrega</label>
+                        <input type="date" id="prodDeadlineDate" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs text-slate-400 font-bold block mb-1">Status do Pedido</label>
+                    <select id="prodStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <option value="Em andamento">Em andamento</option>
+                        <option value="Atrasado">Prioridade / Atrasado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+                <button onclick="closeProductionModal()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-400 hover:text-white">Cancelar</button>
+                <button onclick="saveProductionOrder()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow">Salvar Ordem</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CRIAR / EDITAR TAREFA -->
+    <div id="taskModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-zintechCard border border-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl">
+            <h3 id="modalTaskTitle" class="text-lg sm:text-xl font-bold text-white">Nova Tarefa / Rotina</h3>
+            <input type="hidden" id="editTaskId" value="">
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-slate-400 font-bold block mb-1">Nome da Tarefa</label>
+                    <input type="text" id="taskName" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs text-slate-400 font-bold block mb-1">Data Prevista</label>
+                        <input type="date" id="taskDate" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 font-bold block mb-1">Horário (Padrão: 08:00)</label>
+                        <input type="time" id="taskTime" value="08:00" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs text-slate-400 font-bold block mb-1">Frequência / Repetição</label>
+                    <input type="text" id="taskRecurrenceInput" placeholder="Ex: Única, Todos os dias, A cada 15 dias" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+                <button onclick="closeNewTaskModal()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-400 hover:text-white">Cancelar</button>
+                <button onclick="saveTaskManual()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow">Salvar Tarefa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT DA APLICAÇÃO -->
+    <script>
+        // --- FUNÇÃO DE AJUSTE AUTOMÁTICO PARA DIA ÚTIL ANTERIOR ---
+        function adjustToPreviousBusinessDay(dateObj) {
+            const dayOfWeek = dateObj.getDay();
+            if (dayOfWeek === 6) { 
+                dateObj.setDate(dateObj.getDate() - 1);
+            } else if (dayOfWeek === 0) { 
+                dateObj.setDate(dateObj.getDate() - 2);
+            }
+            return dateObj;
+        }
+
+        // --- AUXILIARES DE DATA ---
+        function getTodayDateStr() {
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const y = now.getFullYear();
+            return `${d}/${m}/${y}`;
+        }
+
+        function getTodayISOStr() {
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const y = now.getFullYear();
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatDateToPT(isoDate) {
+            if (!isoDate) return getTodayDateStr();
+            const parts = isoDate.split('-');
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return isoDate;
+        }
+
+        function formatDateToISO(ptDate) {
+            if (!ptDate) return getTodayISOStr();
+            const parts = ptDate.split('/');
+            if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            return getTodayISOStr();
+        }
+
+        function parseBRDate(ptDate) {
+            if (!ptDate) return new Date();
+            const parts = ptDate.split('/');
+            if (parts.length === 3) {
+                return new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+            return new Date();
+        }
+
+        // --- DADOS INICIAIS ---
+        let tasks = [
+            { id: 1, date: "24/09/2026", time: "08:00", name: "Varrer escritório e organizar recepção", status: "Pendente", recurrence: "Toda Segunda-feira" },
+            { id: 2, date: getTodayDateStr(), time: "10:00", name: "Conferir estoque de produtos químicos", status: "Pendente", recurrence: "A cada 15 dias" },
+            { id: 3, date: getTodayDateStr(), time: "11:30", name: "Verificar exaustor da linha de zincagem", status: "Pendente", recurrence: "Única" }
+        ];
+
+        let productions = [
+            { id: 1, client: "Metalurgica Alpha", weight: "150 kg", product: "Eixo Industrial A4", arrivalDate: "20/09/2026", deadlineDate: "28/09/2026", status: "Em andamento" },
+            { id: 2, client: "Indústria Beta", weight: "300 kg", product: "Suporte Galvanizado", arrivalDate: "21/09/2026", deadlineDate: "30/09/2026", status: "Em andamento" },
+            { id: 3, client: "Usina Gama", weight: "80 kg", product: "Flange de Aço 2\"", arrivalDate: "15/09/2026", deadlineDate: "24/09/2026", status: "Atrasado" }
+        ];
+
+        // Contador de pedidos concluídos para KPI
+        let completedOrdersCount = 0;
+
+        // --- RELÓGIO E DATA EM TEMPO REAL ---
+        function updateClock() {
+            const now = new Date();
+            const days = ['DOMINGO', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'];
+            
+            const dayName = days[now.getDay()];
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+
+            document.getElementById('currentDateDisplay').innerText = `${dayName} — ${day}/${month}/${year}`;
+            document.getElementById('currentTimeDisplay').innerText = `${hours}:${minutes}:${seconds}`;
+
+            checkDailyReset(now.getDate());
+        }
+
+        let lastCheckedDay = new Date().getDate();
+        function checkDailyReset(currentDay) {
+            if (currentDay !== lastCheckedDay) {
+                lastCheckedDay = currentDay;
+                manualResetOfDay();
+            }
+        }
+
+        function manualResetOfDay() {
+            tasks.forEach(t => {
+                if (t.status === 'Concluída') {
+                    if (t.recurrence && t.recurrence !== 'Única') {
+                        t.status = 'Pendente';
+                    }
+                }
+            });
+            renderAll();
+        }
+
+        // --- GERENCIAMENTO DO CRONOGRAMA DE PRODUÇÃO ---
+        function openProductionModal(id = null) {
+            if (id) {
+                const prod = productions.find(p => p.id === id);
+                if (!prod) return;
+                document.getElementById('editProdId').value = prod.id;
+                document.getElementById('modalProductionTitle').innerText = 'Editar Ordem de Produção';
+                document.getElementById('prodClient').value = prod.client;
+                document.getElementById('prodWeight').value = parseFloat(prod.weight) || '';
+                document.getElementById('prodType').value = prod.product;
+                document.getElementById('prodArrivalDate').value = formatDateToISO(prod.arrivalDate);
+                document.getElementById('prodDeadlineDate').value = formatDateToISO(prod.deadlineDate);
+                document.getElementById('prodStatus').value = prod.status;
+            } else {
+                document.getElementById('editProdId').value = '';
+                document.getElementById('modalProductionTitle').innerText = 'Nova Ordem de Produção';
+                document.getElementById('prodClient').value = '';
+                document.getElementById('prodWeight').value = '';
+                document.getElementById('prodType').value = '';
+                document.getElementById('prodArrivalDate').value = getTodayISOStr();
+                document.getElementById('prodDeadlineDate').value = getTodayISOStr();
+                document.getElementById('prodStatus').value = 'Em andamento';
+            }
+            document.getElementById('productionModal').classList.remove('hidden');
+        }
+
+        function closeProductionModal() {
+            document.getElementById('productionModal').classList.add('hidden');
+        }
+
+        function saveProductionOrder() {
+            const editId = document.getElementById('editProdId').value;
+            const client = document.getElementById('prodClient').value.trim();
+            const weightVal = document.getElementById('prodWeight').value;
+            const product = document.getElementById('prodType').value.trim();
+            const arrivalIso = document.getElementById('prodArrivalDate').value;
+            const deadlineIso = document.getElementById('prodDeadlineDate').value;
+            const status = document.getElementById('prodStatus').value;
+
+            if (!client || !weightVal || !product) {
+                alert('Por favor, preencha Cliente, Quantidade (kg) e Tipo de Peça.');
+                return;
+            }
+
+            const weight = `${weightVal} kg`;
+            const arrivalDate = formatDateToPT(arrivalIso);
+            const deadlineDate = formatDateToPT(deadlineIso);
+
+            if (editId) {
+                const prod = productions.find(p => p.id == editId);
+                if (prod) {
+                    prod.client = client;
+                    prod.weight = weight;
+                    prod.product = product;
+                    prod.arrivalDate = arrivalDate;
+                    prod.deadlineDate = deadlineDate;
+                    prod.status = status;
+                }
+            } else {
+                productions.push({
+                    id: Date.now(),
+                    client: client,
+                    weight: weight,
+                    product: product,
+                    arrivalDate: arrivalDate,
+                    deadlineDate: deadlineDate,
+                    status: status
+                });
+            }
+
+            closeProductionModal();
+            renderAll();
+        }
+
+        // REGRA SOLICITADA: EXCLUI A ORDEM AUTOMATICAMENTE APÓS CONCLUSÃO
+        function markProductionReady(id) {
+            productions = productions.filter(p => p.id !== id);
+            completedOrdersCount++;
+            renderAll();
+        }
+
+        function deleteProductionOrder(id) {
+            if (confirm('Deseja realmente excluir esta ordem de produção?')) {
+                productions = productions.filter(p => p.id !== id);
+                renderAll();
+            }
+        }
+
+        // --- PARSER DE IA PARA TAREFAS ---
+        function handleSmartTaskSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('smartTaskInput').value.trim();
+            if (!input) return;
+
+            const parsed = parseSmartTaskText(input);
+            tasks.push({
+                id: Date.now(),
+                date: parsed.date,
+                time: parsed.time,
+                name: parsed.name,
+                status: "Pendente",
+                recurrence: parsed.recurrence
+            });
+
+            document.getElementById('smartTaskInput').value = '';
+            renderAll();
+        }
+
+        function parseSmartTaskText(text) {
+            const originalText = text;
+            let workText = text;
+            let time = "08:00";
+            let recurrence = "Única";
+            const today = new Date();
+            let targetDate = new Date(today);
+            let timeFound = false;
+
+            if (/\b(ao\s+)?meio\s*dia\b/i.test(workText)) {
+                time = "12:00"; workText = workText.replace(/\b(ao\s+)?meio\s*dia\b/gi, ''); timeFound = true;
+            } else if (/\b(à|a)?\s*meia\s*noite\b/i.test(workText)) {
+                time = "00:00"; workText = workText.replace(/\b(à|a)?\s*meia\s*noite\b/gi, ''); timeFound = true;
+            } else if (/\b(de\s+manhã|pela\s+manhã)\b/i.test(workText)) {
+                time = "08:00"; workText = workText.replace(/\b(de\s+manhã|pela\s+manhã)\b/gi, ''); timeFound = true;
+            } else if (/\b(à\s+tarde|pela\s+tarde)\b/i.test(workText)) {
+                time = "14:00"; workText = workText.replace(/\b(à\s+tarde|pela\s+tarde)\b/gi, ''); timeFound = true;
+            }
+
+            if (!timeFound) {
+                const timeMatch = workText.match(/(?:às|as|à|a)?\s*(\d{1,2})(?:[:h](\d{2}))?\s*(?:h|hrs|horas)?/i);
+                if (timeMatch && timeMatch[0]) {
+                    let rawMatch = timeMatch[0].trim().toLowerCase();
+                    let hour = parseInt(timeMatch[1], 10);
+                    let min = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+
+                    if (hour >= 0 && hour <= 23 && min >= 0 && min <= 59 &&
+                        (rawMatch.includes(':') || rawMatch.includes('h') || rawMatch.startsWith('as') || rawMatch.startsWith('às'))) {
+                        time = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+                        workText = workText.replace(timeMatch[0], '');
+                    }
+                }
+            }
+
+            let dayOfWeekFound = "";
+            let targetDayOfWeekIndex = -1;
+            const dowMatch = workText.match(/\b(segunda|terça|terca|quarta|quinta|sexta|sábado|sabado|domingo)(-feira)?\b/i);
+            if (dowMatch) {
+                let dow = dowMatch[1].toLowerCase();
+                if (dow.includes('segunda')) { dayOfWeekFound = 'Segunda-feira'; targetDayOfWeekIndex = 1; }
+                else if (dow.includes('terça') || dow.includes('terca')) { dayOfWeekFound = 'Terça-feira'; targetDayOfWeekIndex = 2; }
+                else if (dow.includes('quarta')) { dayOfWeekFound = 'Quarta-feira'; targetDayOfWeekIndex = 3; }
+                else if (dow.includes('quinta')) { dayOfWeekFound = 'Quinta-feira'; targetDayOfWeekIndex = 4; }
+                else if (dow.includes('sexta')) { dayOfWeekFound = 'Sexta-feira'; targetDayOfWeekIndex = 5; }
+                else if (dow.includes('sábado') || dow.includes('sabado')) { dayOfWeekFound = 'Sábado'; targetDayOfWeekIndex = 6; }
+                else if (dow.includes('domingo')) { dayOfWeekFound = 'Domingo'; targetDayOfWeekIndex = 0; }
+                workText = workText.replace(dowMatch[0], '');
+            }
+
+            const intervalMatch = workText.match(/(?:a\s+cada|de)\s*(\d+)\s*(?:em\s*\d+\s*)?(dias|dia|semanas|semana|meses|mês)?/i);
+            if (intervalMatch) {
+                const num = parseInt(intervalMatch[1], 10);
+                const unit = intervalMatch[2] ? intervalMatch[2].toLowerCase() : 'dias';
+                recurrence = dayOfWeekFound ? `Toda ${dayOfWeekFound} (a cada ${num} ${unit})` : `A cada ${num} ${unit}`;
+                workText = workText.replace(intervalMatch[0], '');
+            } else if (/\bquinzenalmente\b|\bquinzenal\b/i.test(workText)) {
+                recurrence = dayOfWeekFound ? `Toda ${dayOfWeekFound} (a cada 15 dias)` : "A cada 15 dias";
+                workText = workText.replace(/\bquinzenalmente\b|\bquinzenal\b/gi, '');
+            } else if (dayOfWeekFound) {
+                recurrence = `Toda ${dayOfWeekFound}`;
+            }
+
+            if (targetDayOfWeekIndex !== -1) {
+                let currentDayIndex = today.getDay();
+                let daysUntil = (targetDayOfWeekIndex - currentDayIndex + 7) % 7;
+                targetDate.setDate(today.getDate() + daysUntil);
+            }
+
+            targetDate = adjustToPreviousBusinessDay(targetDate);
+
+            let name = workText
+                .replace(/\b(agendar|adicionar|criar|cadastrar|lembrar\s+de|fazer|enviar|visitar|a|para|de|em|com|toda|todo|cada)\b/gi, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            if (name.length < 3) name = originalText;
+            name = name.charAt(0).toUpperCase() + name.slice(1);
+
+            const formattedDate = `${String(targetDate.getDate()).padStart(2, '0')}/${String(targetDate.getMonth() + 1).padStart(2, '0')}/${targetDate.getFullYear()}`;
+            return { name, time, date: formattedDate, recurrence };
+        }
+
+        // --- RENDERIZAÇÃO GERAL ---
+        function renderAll() {
+            renderPendingTasks();
+            renderCompletedTasks();
+            renderDashboardProduction();
+            renderFullProduction();
+            renderAllTasksTable();
+            renderKPIs();
+        }
+
+        function renderPendingTasks() {
+            const container = document.getElementById('pendingTasksList');
+            const badge = document.getElementById('pendingCountBadge');
+            container.innerHTML = '';
+
+            const todayObj = new Date();
+            todayObj.setHours(0, 0, 0, 0);
+
+            const pendingTasks = tasks.filter(t => {
+                if (t.status === 'Concluída') return false;
+                const taskDateObj = parseBRDate(t.date);
+                taskDateObj.setHours(0, 0, 0, 0);
+                return taskDateObj <= todayObj;
+            });
+
+            pendingTasks.sort((a, b) => parseBRDate(a.date) - parseBRDate(b.date));
+            badge.innerText = `${pendingTasks.length} Pendentes`;
+
+            if (pendingTasks.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 space-y-1">
+                        <p class="text-slate-400 text-xs sm:text-sm font-semibold">Nenhuma tarefa pendente para hoje! 🎉</p>
+                    </div>`;
+                return;
+            }
+
+            pendingTasks.forEach(task => {
+                const taskDateObj = parseBRDate(task.date);
+                taskDateObj.setHours(0, 0, 0, 0);
+                const isOverdue = taskDateObj < todayObj;
+
+                const priorityBadge = isOverdue
+                    ? `<span class="text-[9px] sm:text-[10px] font-extrabold px-1.5 py-0.5 rounded border bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse">🔥 Prioridade (${task.date})</span>`
+                    : `<span class="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded border bg-emerald-500/10 text-emerald-400 border-emerald-500/30">Hoje</span>`;
+
+                const borderStyle = isOverdue ? 'border-rose-500/50 bg-rose-950/20' : 'border-slate-800 bg-slate-900/90';
+
+                container.innerHTML += `
+                    <div class="${borderStyle} border p-3 sm:p-3.5 rounded-xl flex items-center justify-between gap-3 transition shadow-md">
+                        <div class="flex items-center space-x-2.5 sm:space-x-3.5">
+                            <div class="flex flex-col items-center justify-center bg-slate-800 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-slate-700/80 min-w-[60px] sm:min-w-[70px]">
+                                <span class="text-xs sm:text-sm font-black text-blue-400 font-mono">${task.time}</span>
+                                <span class="text-[9px] sm:text-[10px] font-bold text-slate-400 mt-0.5">${task.date}</span>
+                            </div>
+                            <div>
+                                <h3 class="text-xs sm:text-sm font-bold text-white leading-tight">${task.name}</h3>
+                                <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                    <span class="text-[9px] sm:text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">🔄 ${task.recurrence}</span>
+                                    ${priorityBadge}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="openEditTaskModal(${task.id})" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-1.5 sm:p-2 rounded-lg text-xs transition border border-slate-700" title="Editar">✏️</button>
+                            <button onclick="completeTask(${task.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-bold transition shadow whitespace-nowrap">✓ Concluir</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderCompletedTasks() {
+            const container = document.getElementById('completedTasksList');
+            container.innerHTML = '';
+            const todayStr = getTodayDateStr();
+            const completedToday = tasks.filter(t => t.status === 'Concluída' && t.date === todayStr);
+
+            if (completedToday.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-2">Nenhuma tarefa recorrente concluída hoje.</p>`;
+                return;
+            }
+
+            completedToday.forEach(task => {
+                container.innerHTML += `
+                    <div class="bg-slate-900/40 border border-emerald-900/40 p-2 sm:p-2.5 rounded-xl flex items-center justify-between opacity-80">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-bold text-emerald-500 font-mono line-through">${task.time}</span>
+                            <h4 class="text-xs font-semibold text-slate-300 line-through">${task.name}</h4>
+                        </div>
+                        <button onclick="revertTask(${task.id})" class="text-[10px] text-slate-400 hover:text-white underline whitespace-nowrap">Reabrir</button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderDashboardProduction() {
+            const tbody = document.getElementById('dashboardProductionTable');
+            tbody.innerHTML = '';
+
+            const todayObj = new Date();
+            todayObj.setHours(0, 0, 0, 0);
+
+            // Apenas ordens não concluídas aparecem
+            let activeProds = productions.filter(p => p.status !== 'Pronto');
+
+            activeProds.sort((a, b) => {
+                const deadlineA = parseBRDate(a.deadlineDate);
+                const deadlineB = parseBRDate(b.deadlineDate);
+                return deadlineA - deadlineB;
+            });
+
+            if (activeProds.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-500 text-xs">Nenhum pedido pendente na produção. Todos concluídos! 🎉</td></tr>`;
+                return;
+            }
+
+            activeProds.forEach(item => {
+                const deadlineObj = parseBRDate(item.deadlineDate);
+                deadlineObj.setHours(0, 0, 0, 0);
+                const isOverdue = deadlineObj < todayObj || item.status === 'Atrasado';
+
+                let statusBadge = isOverdue
+                    ? `<span class="text-rose-400 font-extrabold text-[10px] bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/30 animate-pulse whitespace-nowrap">🔥 Prioridade</span>`
+                    : `<span class="text-amber-400 font-semibold text-[10px] bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30 whitespace-nowrap">⚙️ Em Andamento</span>`;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/40 transition">
+                        <td class="p-2.5">
+                            <p class="font-bold text-white text-xs sm:text-sm leading-tight">${item.client}</p>
+                            <p class="text-[11px] text-slate-400">${item.product}</p>
+                        </td>
+                        <td class="p-2.5 font-mono font-bold text-blue-400 text-xs sm:text-sm">${item.weight}</td>
+                        <td class="p-2.5 text-[11px] sm:text-xs text-slate-300 font-mono">${item.deadlineDate}</td>
+                        <td class="p-2.5">${statusBadge}</td>
+                        <td class="p-2.5 text-right space-x-1 whitespace-nowrap">
+                            <button onclick="openProductionModal(${item.id})" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-1 rounded text-xs transition border border-slate-700" title="Editar">✏️</button>
+                            <button onclick="markProductionReady(${item.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-xs font-bold transition shadow">✅ Pronto</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderFullProduction() {
+            const tbody = document.getElementById('fullProductionTable');
+            tbody.innerHTML = '';
+
+            const searchTerm = document.getElementById('searchProdInput')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('filterProdStatus')?.value || 'Todos';
+
+            let filtered = productions.filter(p => {
+                const matchSearch = p.client.toLowerCase().includes(searchTerm) || p.product.toLowerCase().includes(searchTerm);
+                const matchStatus = statusFilter === 'Todos' || p.status === statusFilter;
+                return matchSearch && matchStatus;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-500 text-xs">Nenhum registro ativo encontrado.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                let statusBadge = item.status === 'Atrasado'
+                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">🔴 Prioridade</span>'
+                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">🟡 Em Andamento</span>';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50 transition">
+                        <td class="p-3 font-bold text-white">${item.client}</td>
+                        <td class="p-3 text-slate-300">${item.product}</td>
+                        <td class="p-3 font-mono font-bold text-blue-400">${item.weight}</td>
+                        <td class="p-3 text-slate-400 font-mono text-xs">${item.arrivalDate}</td>
+                        <td class="p-3 text-slate-300 font-mono text-xs">${item.deadlineDate}</td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 text-right space-x-1 whitespace-nowrap">
+                            <button onclick="openProductionModal(${item.id})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-2.5 py-1 rounded text-xs font-bold border border-blue-500/30 transition">✏️ Editar</button>
+                            <button onclick="markProductionReady(${item.id})" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-2.5 py-1 rounded text-xs font-bold border border-emerald-500/30 transition">✅ Concluir</button>
+                            <button onclick="deleteProductionOrder(${item.id})" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white px-2.5 py-1 rounded text-xs font-bold border border-rose-500/30 transition">🗑️ Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderKPIs() {
+            const todayObj = new Date();
+            todayObj.setHours(0, 0, 0, 0);
+
+            let total = productions.length;
+            let active = productions.filter(p => p.status === 'Em andamento').length;
+            let overdue = productions.filter(p => {
+                const d = parseBRDate(p.deadlineDate);
+                d.setHours(0, 0, 0, 0);
+                return d < todayObj || p.status === 'Atrasado';
+            }).length;
+
+            document.getElementById('kpiTotalOrders').innerText = total;
+            document.getElementById('kpiActiveOrders').innerText = active;
+            document.getElementById('kpiReadyOrders').innerText = completedOrdersCount;
+            document.getElementById('kpiOverdueOrders').innerText = overdue;
+        }
+
+        function renderAllTasksTable() {
+            const tbody = document.getElementById('allTasksTableBody');
+            tbody.innerHTML = '';
+
+            tasks.forEach(task => {
+                let statusBadge = task.status === 'Concluída' 
+                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">🟢 Concluída</span>'
+                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">🔵 Pendente</span>';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-900/50 transition">
+                        <td class="p-3 font-mono text-slate-300 font-semibold">${task.date}</td>
+                        <td class="p-3 font-mono text-blue-400 font-bold">${task.time}</td>
+                        <td class="p-3 font-bold text-white">${task.name}</td>
+                        <td class="p-3 text-xs text-slate-400">${task.recurrence}</td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 text-right space-x-1">
+                            <button onclick="openEditTaskModal(${task.id})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white px-2.5 py-1 rounded text-xs font-bold border border-blue-500/30 transition">✏️ Editar</button>
+                            <button onclick="deleteTask(${task.id})" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white px-2.5 py-1 rounded text-xs font-bold border border-rose-500/30 transition">🗑️ Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // REGRA SOLICITADA: EXCLUI TAREFAS NÃO RECORRENTES ("ÚNICA") AO CONCLUIR
+        function completeTask(id) {
+            const taskIndex = tasks.findIndex(t => t.id === id);
+            if (taskIndex !== -1) {
+                const task = tasks[taskIndex];
+                if (!task.recurrence || task.recurrence === 'Única' || task.recurrence.trim() === '') {
+                    tasks.splice(taskIndex, 1);
+                } else {
+                    task.status = 'Concluída';
+                }
+                renderAll();
+            }
+        }
+
+        function revertTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) task.status = 'Pendente';
+            renderAll();
+        }
+
+        function deleteTask(id) {
+            if (confirm('Deseja realmente excluir esta tarefa?')) {
+                tasks = tasks.filter(t => t.id !== id);
+                renderAll();
+            }
+        }
+
+        function openEditTaskModal(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            document.getElementById('editTaskId').value = task.id;
+            document.getElementById('modalTaskTitle').innerText = 'Editar Tarefa';
+            document.getElementById('taskName').value = task.name;
+            document.getElementById('taskDate').value = formatDateToISO(task.date);
+            document.getElementById('taskTime').value = task.time || "08:00";
+            document.getElementById('taskRecurrenceInput').value = task.recurrence;
+
+            document.getElementById('taskModal').classList.remove('hidden');
+        }
+
+        function saveTaskManual() {
+            const editId = document.getElementById('editTaskId').value;
+            const name = document.getElementById('taskName').value;
+            const isoDate = document.getElementById('taskDate').value;
+            const time = document.getElementById('taskTime').value || "08:00";
+            const recurrence = document.getElementById('taskRecurrenceInput').value || "Única";
+
+            if (!name) { alert('Informe o nome da tarefa.'); return; }
+
+            let dateObj = isoDate ? new Date(isoDate + 'T00:00:00') : new Date();
+            dateObj = adjustToPreviousBusinessDay(dateObj);
+
+            const formattedDate = `${String(dateObj.getDate()).padStart(2, '0')}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${dateObj.getFullYear()}`;
+
+            if (editId) {
+                const task = tasks.find(t => t.id == editId);
+                if (task) {
+                    task.name = name;
+                    task.date = formattedDate;
+                    task.time = time;
+                    task.recurrence = recurrence;
+                }
+            } else {
+                tasks.push({
+                    id: Date.now(),
+                    date: formattedDate,
+                    time: time,
+                    name: name,
+                    status: "Pendente",
+                    recurrence: recurrence
+                });
+            }
+
+            closeNewTaskModal();
+            renderAll();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-slate-800', 'text-slate-300');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.remove('bg-slate-800', 'text-slate-300');
+            activeBtn.classList.add('bg-blue-600', 'text-white');
+        }
+
+        function openNewTaskModal() { 
+            document.getElementById('editTaskId').value = '';
+            document.getElementById('modalTaskTitle').innerText = 'Nova Tarefa / Rotina';
+            document.getElementById('taskName').value = '';
+            document.getElementById('taskDate').value = getTodayISOStr();
+            document.getElementById('taskTime').value = '08:00';
+            document.getElementById('taskRecurrenceInput').value = 'Única';
+            document.getElementById('taskModal').classList.remove('hidden'); 
+        }
+
+        function closeNewTaskModal() { document.getElementById('taskModal').classList.add('hidden'); }
+
+        // --- INICIALIZAÇÃO ---
+        window.onload = function() {
+            updateClock();
+            setInterval(updateClock, 1000);
+            renderAll();
+        }
+    </script>
+</body>
+</html>
